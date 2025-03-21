@@ -22,7 +22,7 @@ with open(path+label_path, 'rb') as label_file:
     tabletop_labels = pickle.load(label_file)
     label_file.close()
 
-img_list   = os.listdir(path+img_path)
+img_list   = sorted(os.listdir(path+img_path))
 
 for polygon_list,img_name in zip(tabletop_labels,img_list): 
     img = plt.imread(path+img_path+img_name)
