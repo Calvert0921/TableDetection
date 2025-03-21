@@ -7,7 +7,7 @@ import os
 import pickle
 import matplotlib.pyplot as plt
 
-path = "./data_reduced/harvard_c5/hv_c5_1/"
+path = "data/harvard_c5/hv_c5_1/"
 # path = "./data_reduced/harvard_c6/hv_c6_1/"
 # path = "./data_reduced/mit_76_studyroom/76-1studyroom2/"
 # path = "./data_reduced/mit_32_d507/d507_2/"
