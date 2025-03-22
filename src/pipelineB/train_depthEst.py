@@ -2,9 +2,10 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
-from dataloader import get_dataloaders
+from dataloader_depthEst import get_dataloaders
 import warnings
 
+# Ignore warning from import model
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 def main():
@@ -15,7 +16,7 @@ def main():
     train_folders = ["mit_32_d507/d507_2", "mit_76_459/76-459b", "mit_76_studyroom/76-1studyroom2", 
                      "mit_gym_z_squash/gym_z_squash_scan1_oct_26_2012_erika", "mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika"]
     val_folders   = ["harvard_c5/hv_c5_1", "harvard_c6/hv_c6_1"]
-    test_folders  = ["harvard_c11/hv_c11_2", "harvard_tea_2/hv_tea2_2"]
+    test_folders  = ["harvard_c5/hv_c5_1", "harvard_c6/hv_c6_1", "harvard_c11/hv_c11_2", "harvard_tea_2/hv_tea2_2"]
 
     # Define transforms for the RGB images. MiDaS typically uses 384x384 inputs.
     rgb_transform = transforms.Compose([
@@ -32,7 +33,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # Load pre-trained MiDaS model (using MiDaS_small for efficiency)
-    midas = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
+    midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
     midas.to(device)
     midas.train()  # Set model to training mode for fine-tuning
 
@@ -40,7 +41,7 @@ def main():
     criterion = nn.L1Loss()
     optimizer = optim.Adam(midas.parameters(), lr=1e-4)
 
-    num_epochs = 20  # Adjust the number of epochs as needed
+    num_epochs = 20
 
     for epoch in range(num_epochs):
         midas.train()
