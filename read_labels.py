@@ -8,12 +8,12 @@ import pickle
 import matplotlib.pyplot as plt
 
 path = "data/harvard_c5/hv_c5_1/"
-# path = "./data_reduced/harvard_c6/hv_c6_1/"
-# path = "./data_reduced/mit_76_studyroom/76-1studyroom2/"
-# path = "./data_reduced/mit_32_d507/d507_2/"
-# path = "./data_reduced/harvard_c11/hv_c11_2/"
-# path = "./data_reduced/mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika/"
-# path = "./data_reduced/mit_76_459/76-459b/"
+# path = "data/harvard_c6/hv_c6_1/"
+# path = "data/mit_76_studyroom/76-1studyroom2/"
+# path = "data/mit_32_d507/d507_2/"
+# path = "data/harvard_c11/hv_c11_2/"
+# path = "data/mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika/"
+# path = "data/mit_76_459/76-459b/"
 
 label_path = "labels/tabletop_labels.dat"
 img_path   = "image/"
