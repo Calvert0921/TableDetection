@@ -57,7 +57,7 @@ class MultiFolderDepthDataset(Dataset):
         depth = transforms.ToTensor()(depth)  # Convert depth to a tensor with shape [1, H, W]
         return image, depth
 
-def get_dataloaders(big_data_dir, train_folders, val_folders, test_folders, transform, batch_size=4, num_workers=4):
+def get_dataloaders_depth(big_data_dir, train_folders, val_folders, test_folders, transform, batch_size=4, num_workers=4):
     # Create dataset objects for each split
     train_dataset = MultiFolderDepthDataset(big_data_dir, train_folders, transform=transform)
     val_dataset = MultiFolderDepthDataset(big_data_dir, val_folders, transform=transform)

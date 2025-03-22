@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torchvision import transforms
-from dataloader_depthEst import get_dataloaders
+from dataloader_depthEst import get_dataloaders_depth
 import warnings
 from tqdm import tqdm  # Import tqdm for progress bars
 
@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 
 def main():
     # Path to the big data directory containing all subfolders
-    big_data_dir = "../../data"  # Adjust this path if needed
+    big_data_dir = "../../data"
 
     # Specify which subfolders to use for each split
     train_folders = ["mit_32_d507/d507_2", "mit_76_459/76-459b", "mit_76_studyroom/76-1studyroom2", 
@@ -28,7 +28,7 @@ def main():
     ])
 
     # Create DataLoaders for each dataset split
-    train_loader, val_loader, test_loader = get_dataloaders(big_data_dir, train_folders, val_folders, test_folders, rgb_transform)
+    train_loader, val_loader, test_loader = get_dataloaders_depth(big_data_dir, train_folders, val_folders, test_folders, rgb_transform)
 
     # Device configuration: use GPU if available
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
