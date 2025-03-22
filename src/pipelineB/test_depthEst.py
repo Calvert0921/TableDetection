@@ -64,6 +64,15 @@ def main():
                              std=[0.229, 0.224, 0.225])
     ])
     
+    # Device configuration
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+    # Load the pre-trained MiDaS model (MiDaS_small for efficiency)
+    midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
+    midas.load_state_dict(torch.load(model_path, map_location=device))
+    midas.to(device)
+    midas.eval()
+    
     for test_folder_base in mit_folders_base:
         output_dir = os.path.join(test_folder_base, "depthPred")
         
@@ -73,15 +82,6 @@ def main():
         # Create the test dataset and DataLoader (batch size 1 for visualization)
         test_dataset = SingleFolderDepthDataset(test_folder_base, transform=rgb_transform)
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
-
-        # Device configuration
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-        # Load the pre-trained MiDaS model (MiDaS_small for efficiency)
-        midas = torch.hub.load("intel-isl/MiDaS", "MiDaS_small")
-        midas.load_state_dict(torch.load(model_path, map_location=device))
-        midas.to(device)
-        midas.eval()
 
         # Iterate through all samples in the test dataset
         with torch.no_grad():

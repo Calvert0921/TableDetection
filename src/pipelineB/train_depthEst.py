@@ -4,6 +4,7 @@ import torch.optim as optim
 from torchvision import transforms
 from dataloader_depthEst import get_dataloaders
 import warnings
+from tqdm import tqdm  # Import tqdm for progress bars
 
 # Ignore warning from import model
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -46,15 +47,16 @@ def main():
     for epoch in range(num_epochs):
         midas.train()
         running_loss = 0.0
-        for i, (rgb, depth) in enumerate(train_loader):
+        
+        # Training loop with tqdm progress bar
+        train_bar = tqdm(train_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] Training", leave=False)
+        for i, (rgb, depth) in enumerate(train_bar):
             rgb = rgb.to(device)
             depth = depth.to(device)
             
             optimizer.zero_grad()
             # Forward pass: predict depth from RGB input
             pred_depth = midas(rgb)
-            
-            # Check and adjust predicted depth dimensions
             if pred_depth.dim() == 3:
                 pred_depth = pred_depth.unsqueeze(1)  # Now shape is (N, 1, H, W)
             
@@ -69,17 +71,18 @@ def main():
             optimizer.step()
             
             running_loss += loss.item()
-            if (i + 1) % 10 == 0:
-                print(f"Epoch [{epoch+1}/{num_epochs}], Step [{i+1}/{len(train_loader)}], Loss: {loss.item():.4f}")
+            # Update progress bar with current loss
+            train_bar.set_postfix(loss=f"{loss.item():.4f}")
         
         avg_train_loss = running_loss / len(train_loader)
         print(f"Epoch [{epoch+1}/{num_epochs}] Average Training Loss: {avg_train_loss:.4f}")
 
-        # Validation phase (optional)
+        # Validation phase with tqdm progress bar
         midas.eval()
         val_loss = 0.0
+        val_bar = tqdm(val_loader, desc=f"Epoch [{epoch+1}/{num_epochs}] Validation", leave=False)
         with torch.no_grad():
-            for rgb, depth in val_loader:
+            for rgb, depth in val_bar:
                 rgb = rgb.to(device)
                 depth = depth.to(device)
                 pred_depth = midas(rgb)
@@ -90,6 +93,7 @@ def main():
                 )
                 loss = criterion(pred_depth_resized, depth)
                 val_loss += loss.item()
+                val_bar.set_postfix(loss=f"{loss.item():.4f}")
         avg_val_loss = val_loss / len(val_loader)
         print(f"Epoch [{epoch+1}/{num_epochs}] Validation Loss: {avg_val_loss:.4f}")
         midas.train()  # Return to training mode for the next epoch
@@ -98,11 +102,12 @@ def main():
     torch.save(midas.state_dict(), "midas_finetuned.pth")
     print("Training complete. Model saved as midas_finetuned.pth")
     
-    # Testing phase
+    # Testing phase with tqdm progress bar
     midas.eval()
     test_loss = 0.0
+    test_bar = tqdm(test_loader, desc="Testing", leave=False)
     with torch.no_grad():
-        for rgb, depth in test_loader:
+        for rgb, depth in test_bar:
             rgb = rgb.to(device)
             depth = depth.to(device)
             pred_depth = midas(rgb)
@@ -113,6 +118,7 @@ def main():
             )
             loss = criterion(pred_depth_resized, depth)
             test_loss += loss.item()
+            test_bar.set_postfix(loss=f"{loss.item():.4f}")
     avg_test_loss = test_loss / len(test_loader)
     print(f"Testing Loss: {avg_test_loss:.4f}")
 
