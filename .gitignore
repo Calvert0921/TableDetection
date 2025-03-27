@@ -1,0 +1,5 @@
+# Ignore the visualizations folder
+visualizations/
+
+# Ignore all .pyd files
+*.pyc
