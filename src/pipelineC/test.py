@@ -93,6 +93,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default="best_model_pipelineC.pth")
     parser.add_argument('--test_npz', type=str, default="./datasets/pipelineC_dataset_harvard_test.npz")
+    # selected_tables_pointclouds_C.npz
+    # parser.add_argument('--test_npz', type=str, default="./datasets/selected_tables_pointclouds_C.npz")
     parser.add_argument('--batch_size', type=int, default=8)
     parser.add_argument('--vis_dir', type=str, default="./visualizations")
     parser.add_argument('--vis_samples', type=int, default=10, help="要可视化的样本数量")
