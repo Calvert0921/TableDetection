@@ -4,9 +4,9 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
-import matplotlib.pyplot as plt
 import numpy as np
 import warnings
+from utils import convert_depth_to_8bit_depth
 
 # Ignore warning from import model
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -22,7 +22,10 @@ class SingleFolderDepthDataset(Dataset):
         self.transform = transform
         self.samples = []
         image_dir = os.path.join(folder_path, "image")
-        depth_dir = os.path.join(folder_path, "depthTSDF")
+        if folder_path == "../../data/harvard_tea_2/hv_tea2_2":
+                depth_dir = os.path.join(folder_path, "depth")
+        else:
+            depth_dir = os.path.join(folder_path, "depthTSDF")
         
         # List image and depth files (assumes they are sorted in the same order)
         image_files = sorted([f for f in os.listdir(image_dir) if f.lower().endswith(('.png', '.jpg', '.jpeg'))])
@@ -48,22 +51,46 @@ class SingleFolderDepthDataset(Dataset):
         depth = transforms.ToTensor()(depth)  # Convert depth image to tensor [1, H, W]
         return image, depth
 
+def compute_metrics(pred_depth, depth):
+    # Convert to 8 bit depth image
+    pred_depth, depth = convert_depth_to_8bit_depth(pred_depth), convert_depth_to_8bit_depth(depth)
+    
+    # Convert the PIL images back to tensors for PyTorch operations
+    pred_depth = transforms.ToTensor()(pred_depth).float()  # Convert to tensor and ensure float type
+    depth = transforms.ToTensor()(depth).float()  # Convert to tensor and ensure float type
+    
+    # Compute the Mean Absolute Error (MAE)
+    mae = torch.mean(torch.abs(pred_depth - depth))
+
+    # Compute the Root Mean Squared Error (RMSE)
+    rmse = torch.sqrt(torch.mean((pred_depth - depth) ** 2))
+
+    # Compute the Mean Squared Error (MSE)
+    mse = torch.mean((pred_depth - depth) ** 2)
+
+    return mae.item(), rmse.item(), mse.item()
+
 def main():
     # Set paths
-    mit_folders_base = ["../../data/mit_32_d507/d507_2", "../../data/mit_76_459/76-459b", "../../data/mit_76_studyroom/76-1studyroom2", 
-                        "../../data/mit_gym_z_squash/gym_z_squash_scan1_oct_26_2012_erika", "../../data/mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika"]
-    harvard_folders_base = ["../../data/harvard_c5/hv_c5_1", "../../data/harvard_c6/hv_c6_1", "../../data/harvard_c11/hv_c11_2", "../../data/harvard_tea_2/hv_tea2_2"]
-    model_path = "midas_finetuned.pth"  # Path to your saved model
-    
+    # mit_folders_base = ["../../data/mit_32_d507/d507_2", "../../data/mit_76_459/76-459b", "../../data/mit_76_studyroom/76-1studyroom2", 
+    #                     "../../data/mit_gym_z_squash/gym_z_squash_scan1_oct_26_2012_erika", "../../data/mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika"]
+    harvard_folders_base = [
+        "../../data/harvard_c5/hv_c5_1", 
+        "../../data/harvard_c6/hv_c6_1", 
+        "../../data/harvard_c11/hv_c11_2", 
+        "../../data/harvard_tea_2/hv_tea2_2",
+    ]
+    # ucl_folders_base = ["../../data/RealSense/table", "../../data/RealSense/no_table"]
+    model_path = "best_midas_finetuned.pth"  # Path to your saved model
 
     # Define transforms for the RGB image
-    rgb_transform = transforms.Compose([
+    rgb_transform = transforms.Compose([ 
         transforms.Resize((384, 384)),
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406],
                              std=[0.229, 0.224, 0.225])
     ])
-    
+
     # Device configuration
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -72,8 +99,10 @@ def main():
     midas.load_state_dict(torch.load(model_path, map_location=device))
     midas.to(device)
     midas.eval()
-    
-    for test_folder_base in mit_folders_base:
+
+    all_mae, all_rmse, all_mse = [], [], []
+
+    for test_folder_base in harvard_folders_base:
         output_dir = os.path.join(test_folder_base, "depthPred")
         
         # Create output folder if it doesn't exist
@@ -100,30 +129,34 @@ def main():
                     pred_depth, size=depth.shape[-2:], mode="bilinear", align_corners=False
                 )
 
+                # Compute the metrics for the current sample
+                mae, rmse, mse = compute_metrics(pred_depth_resized, depth)
+
+                # Store metrics for averaging later
+                all_mae.append(mae)
+                all_rmse.append(rmse)
+                all_mse.append(mse)
+
                 # Convert tensors to numpy arrays for display
                 pred_depth_np = pred_depth_resized.squeeze().cpu().numpy()
                 depth_np = depth.squeeze().cpu().numpy()
 
-                # # Display the predicted depth and the ground truth depth side by side
-                # plt.figure(figsize=(12, 6))
-                # plt.subplot(1, 2, 1)
-                # plt.imshow(pred_depth_np, cmap="gray")
-                # plt.title("Predicted Depth")
-                # plt.axis("off")
-
-                # plt.subplot(1, 2, 2)
-                # plt.imshow(depth_np, cmap="gray")
-                # plt.title("Ground Truth Depth")
-                # plt.axis("off")
-                
-                # plt.suptitle(f"Sample {idx+1} of {len(test_dataset)}")
-                # plt.show()  # Close window to proceed to the next image
-                
                 # Save the predicted depth image using PIL
                 pred_depth_np = pred_depth_np.astype(np.uint16)
                 output_path = os.path.join(output_dir, f"pred_{idx+1:03d}.png")
                 Image.fromarray(pred_depth_np).save(output_path)
                 print(f"Saved prediction {idx+1} to {output_path}")
+
+    # Calculate the average metrics over all the test samples
+    avg_mae = np.mean(all_mae)
+    avg_rmse = np.mean(all_rmse)
+    avg_mse = np.mean(all_mse)
+
+    # Print the overall performance metrics
+    print(f"\nAverage Performance on Harvard Set:")
+    print(f"Mean Absolute Error (MAE): {avg_mae:.4f}")
+    print(f"Root Mean Squared Error (RMSE): {avg_rmse:.4f}")
+    print(f"Mean Squared Error (MSE): {avg_mse:.4f}")
 
 if __name__ == "__main__":
     main()

@@ -56,10 +56,10 @@ class TestPipelineDataset(Dataset):
                 labels_data = labels_data[:num_samples]
             else:
                 # If there is no label file, assign labels based on folder name.
-                if "table" in folder.lower():
-                    labels_data = [1] * len(rgb_files)
-                elif "no_table" in folder.lower():
+                if "no_table" in folder.lower():
                     labels_data = [0] * len(rgb_files)
+                elif "table" in folder.lower():
+                    labels_data = [1] * len(rgb_files)
                 else:
                     # Default behavior: assign empty list so that later logic assigns label 0.
                     labels_data = [[] for _ in range(len(rgb_files))]

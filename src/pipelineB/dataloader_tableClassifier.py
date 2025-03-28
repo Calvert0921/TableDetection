@@ -4,6 +4,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader
 from torchvision import transforms
 from PIL import Image
+from utils import convert_depth_to_8bit_classify
+
 
 class TableClassificationDataset(Dataset):
     def __init__(self, big_data_dir, folder_list, use_pred, transform=None):
@@ -18,7 +20,6 @@ class TableClassificationDataset(Dataset):
         self.transform = transform
 
         for folder in folder_list:
-            # Construct the path to the depth images in the current folder.
             folder_path = os.path.join(big_data_dir, folder)
             if use_pred:
                 depth_folder = os.path.join(folder_path, "depthPred")
@@ -37,18 +38,11 @@ class TableClassificationDataset(Dataset):
             # Check if a label file exists in the current folder.
             label_file_path = os.path.join(folder_path, "labels/tabletop_labels.dat")
             if os.path.exists(label_file_path):
-                # Load the label data (assuming JSON format).
                 with open(label_file_path, 'rb') as f:
                     labels_data = pickle.load(f)
-                    f.close()
-                # Expect labels_data to be a list of polygon lists—one per image.
-                if len(labels_data) != len(depth_files):
-                    print(f"Warning: In folder {folder}, number of depth images ({len(depth_files)}) and "
-                          f"labels ({len(labels_data)}) differ. Using first {min(len(depth_files), len(labels_data))} samples.")
                 num_samples = min(len(depth_files), len(labels_data))
                 labels_data = labels_data[:num_samples]
             else:
-                # No label file: mark all images as having no table (empty polygon list → label 0).
                 labels_data = [[] for _ in range(len(depth_files))]
                 num_samples = len(depth_files)
 
@@ -63,17 +57,23 @@ class TableClassificationDataset(Dataset):
     
     def __getitem__(self, idx):
         depth_img_path, label = self.samples[idx]
-        # Load the image in 16-bit mode.
-        depth_img = Image.open(depth_img_path).convert("I;16")
-        # Apply any provided transforms. If your transform includes ToTensor(),
-        # it will convert the image to an integer tensor.
+        
+        # Load the image in 16-bit mode (for depth image).
+        depth_img = Image.open(depth_img_path).convert("I;16")  # 'I;16' for 16-bit depth images
+        
+        # Convert depth image from 16-bit to 8-bit using the convert_depth_to_8bit function
+        depth_img = convert_depth_to_8bit_classify(depth_img)
+
+        # Apply any provided transformations to the depth image (if necessary)
         if self.transform:
             depth_img = self.transform(depth_img)
         else:
             depth_img = transforms.ToTensor()(depth_img)
-        # Convert to float and scale from [0, 65535] to [0, 1]
-        depth_img = depth_img.float() / 65535.0
+        
+        # Return depth image tensor and label
         return depth_img, torch.tensor(label, dtype=torch.long)
+
+
 
 
 def get_dataloader_table(big_data_dir, folder_list, use_pred=False, transform=None, batch_size=4, shuffle=True, num_workers=4):

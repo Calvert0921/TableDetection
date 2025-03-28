@@ -42,7 +42,11 @@ def main():
     criterion = nn.L1Loss()
     optimizer = optim.Adam(midas.parameters(), lr=1e-4)
 
-    num_epochs = 20
+    num_epochs = 50
+    best_val_loss = float('inf')
+    epochs_no_improve = 0
+    # patience = 5  # Number of epochs to wait without improvement before stopping
+    best_model_wts = None
 
     for epoch in range(num_epochs):
         midas.train()
@@ -96,12 +100,27 @@ def main():
                 val_bar.set_postfix(loss=f"{loss.item():.4f}")
         avg_val_loss = val_loss / len(val_loader)
         print(f"Epoch [{epoch+1}/{num_epochs}] Validation Loss: {avg_val_loss:.4f}")
-        midas.train()  # Return to training mode for the next epoch
 
-    # Save the fine-tuned model
-    torch.save(midas.state_dict(), "midas_finetuned.pth")
-    print("Training complete. Model saved as midas_finetuned.pth")
-    
+        # Early stopping: Check if validation loss improved
+        if avg_val_loss < best_val_loss:
+            best_val_loss = avg_val_loss
+            best_model_wts = midas.state_dict()  # Save the best model
+            epochs_no_improve = 0
+            torch.save(midas.state_dict(), "best_midas_finetuned.pth")  # Save the best model weights
+            print(f"Validation loss improved to {best_val_loss:.4f}. Model saved.")
+        else:
+            epochs_no_improve += 1
+            print(f"No improvement for {epochs_no_improve} epoch(s).")
+
+        # # Early stopping condition
+        # if epochs_no_improve >= patience:
+        #     print("Early stopping triggered.")
+        #     break
+
+    # Load best model weights before testing
+    if best_model_wts:
+        midas.load_state_dict(best_model_wts)
+
     # Testing phase with tqdm progress bar
     midas.eval()
     test_loss = 0.0
