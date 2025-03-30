@@ -7,6 +7,7 @@ from PIL import Image
 import numpy as np
 import warnings
 from utils import convert_depth_to_8bit_depth
+import matplotlib.pyplot as plt
 
 # Ignore warning from import model
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -72,15 +73,15 @@ def compute_metrics(pred_depth, depth):
 
 def main():
     # Set paths
-    # mit_folders_base = ["../../data/mit_32_d507/d507_2", "../../data/mit_76_459/76-459b", "../../data/mit_76_studyroom/76-1studyroom2", 
-    #                     "../../data/mit_gym_z_squash/gym_z_squash_scan1_oct_26_2012_erika", "../../data/mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika"]
+    mit_folders_base = ["../../data/mit_32_d507/d507_2", "../../data/mit_76_459/76-459b", "../../data/mit_76_studyroom/76-1studyroom2", 
+                        "../../data/mit_gym_z_squash/gym_z_squash_scan1_oct_26_2012_erika", "../../data/mit_lab_hj/lab_hj_tea_nov_2_2012_scan1_erika"]
     harvard_folders_base = [
         "../../data/harvard_c5/hv_c5_1", 
         "../../data/harvard_c6/hv_c6_1", 
         "../../data/harvard_c11/hv_c11_2", 
         "../../data/harvard_tea_2/hv_tea2_2",
     ]
-    # ucl_folders_base = ["../../data/RealSense/table", "../../data/RealSense/no_table"]
+    ucl_folders_base = ["../../data/RealSense/table", "../../data/RealSense/no_table"]
     model_path = "best_midas_finetuned.pth"  # Path to your saved model
 
     # Define transforms for the RGB image
@@ -102,7 +103,7 @@ def main():
 
     all_mae, all_rmse, all_mse = [], [], []
 
-    for test_folder_base in harvard_folders_base:
+    for test_folder_base in ucl_folders_base:
         output_dir = os.path.join(test_folder_base, "depthPred")
         
         # Create output folder if it doesn't exist
@@ -140,6 +141,21 @@ def main():
                 # Convert tensors to numpy arrays for display
                 pred_depth_np = pred_depth_resized.squeeze().cpu().numpy()
                 depth_np = depth.squeeze().cpu().numpy()
+                
+                # Display the predicted depth and the ground truth depth side by side
+                # plt.figure(figsize=(12, 6))
+                # plt.subplot(1, 2, 1)
+                # plt.imshow(pred_depth_np, cmap="gray")
+                # plt.title("Predicted Depth")
+                # plt.axis("off")
+    
+                # plt.subplot(1, 2, 2)
+                # plt.imshow(depth_np, cmap="gray")
+                # plt.title("Ground Truth Depth")
+                # plt.axis("off")
+                
+                # plt.suptitle(f"Sample {idx+1} of {len(test_dataset)}")
+                # plt.show()  # Close window to proceed to the next image
 
                 # Save the predicted depth image using PIL
                 pred_depth_np = pred_depth_np.astype(np.uint16)
@@ -153,7 +169,7 @@ def main():
     avg_mse = np.mean(all_mse)
 
     # Print the overall performance metrics
-    print(f"\nAverage Performance on Harvard Set:")
+    print(f"\nAverage Performance on Own Dataset:")
     print(f"Mean Absolute Error (MAE): {avg_mae:.4f}")
     print(f"Root Mean Squared Error (RMSE): {avg_rmse:.4f}")
     print(f"Mean Squared Error (MSE): {avg_mse:.4f}")

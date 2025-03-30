@@ -180,7 +180,7 @@ def main():
     total_samples = len(all_labels)
     correct_preds = sum([1 for l, p in zip(all_labels, all_preds) if l == p])
     accuracy = correct_preds / total_samples if total_samples > 0 else 0
-    print(f"Test Accuracy on Harvard and New Test folders: {accuracy*100:.2f}%")
+    print(f"Test Accuracy on Own Dataset: {accuracy*100:.2f}%")
     
     # Compute confusion matrix and classification report.
     cm = confusion_matrix(all_labels, all_preds)

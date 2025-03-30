@@ -42,7 +42,7 @@ def main():
     criterion = nn.L1Loss()
     optimizer = optim.Adam(midas.parameters(), lr=1e-4)
 
-    num_epochs = 50
+    num_epochs = 30
     best_val_loss = float('inf')
     epochs_no_improve = 0
     # patience = 5  # Number of epochs to wait without improvement before stopping
