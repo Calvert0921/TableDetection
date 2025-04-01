@@ -9,24 +9,35 @@ import matplotlib.pyplot as plt
 import os
 from tqdm import tqdm
 
+THRESHOLD = 0.02  # 1%阈值
+
 class CustomPointCloudDataset(Dataset):
-    """Point cloud dataset without labels"""
+    """Point cloud dataset with filenames"""
     def __init__(self, npz_path):
         data = np.load(npz_path)
         self.pointclouds = data['pointclouds'].astype(np.float32)  # [N, 1024, 3]
         
-        # Extract metadata (if exists)
-        self.table_names = data['table_names'] if 'table_names' in data else np.array(['unknown'] * len(self.pointclouds))
+        # 读取文件名
+        self.filenames = data['filenames'] if 'filenames' in data else np.array(['unknown'] * len(self.pointclouds))
         self.frame_indices = data['frame_indices'] if 'frame_indices' in data else np.arange(len(self.pointclouds))
         
-        # Create default category vector (required by the model)
+        # 如果有标签，也读取标签
+        if 'labels' in data:
+            self.labels = data['labels'] 
+            self.has_labels = True
+        else:
+            self.has_labels = False
+        
+        # 创建默认分类向量(模型需要)
         self.categorical_vectors = np.ones((len(self.pointclouds), 1), dtype=np.float32)
 
     def __len__(self):
         return len(self.pointclouds)
 
     def __getitem__(self, idx):
-        return self.pointclouds[idx], self.categorical_vectors[idx], self.table_names[idx], self.frame_indices[idx]
+        # 返回点云、类别向量、文件名和帧索引
+        return self.pointclouds[idx], self.categorical_vectors[idx], self.filenames[idx], self.frame_indices[idx]
+    
 
 def predict_point_labels(model, dataloader, device):
     """Predict tabletop points in the point cloud"""
@@ -54,8 +65,9 @@ def predict_point_labels(model, dataloader, device):
 
     return all_point_preds, all_table_names, all_frame_indices
 
+
 def visualize_prediction(points, point_preds, save_dir, file_prefix, idx):
-    """Visualize point cloud prediction results"""
+    """Visualize point cloud prediction results - table detected only when >1% points are table points"""
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
     
@@ -70,21 +82,27 @@ def visualize_prediction(points, point_preds, save_dir, file_prefix, idx):
     
     # Calculate table point ratio
     table_ratio = np.mean(point_preds)
-    table_confidence = "High" if table_ratio > 0.4 else "Medium" if table_ratio > 0.2 else "Low"
     
-    ax.set_title(f'Prediction - Table Points: {table_ratio:.2%} (Confidence: {table_confidence})')
+    # Table detected only when >1% points are table points
+    has_table = table_ratio > THRESHOLD  # 修改为使用1%阈值
+    table_presence = "Table Detected" if has_table else "No Table"
+    
+    # Show both the binary result and the ratio for reference
+    ax.set_title(f'Prediction: {table_presence} (Table Points: {table_ratio:.2%})')
     ax.set_axis_off()
     
     filename = f'{file_prefix}_{idx}.png'
     plt.savefig(os.path.join(save_dir, filename), bbox_inches='tight', dpi=150)
     plt.close()
     
-    return table_ratio
+    # Return binary table presence instead of ratio
+    return has_table
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', type=str, default="best_model_pipelineC.pth", help="Pretrained model path")
-    parser.add_argument('--data_npz', type=str, default="./datasets/selected_tables_pointclouds_C.npz", help="Point cloud data path")
+    parser.add_argument('--data_npz', type=str, default="./datasets/realsense_pointclouds_C.npz", help="Point cloud data path")
     parser.add_argument('--batch_size', type=int, default=8, help="Batch size")
     parser.add_argument('--vis_dir', type=str, default="./predictions", help="Visualization output directory")
     parser.add_argument('--threshold', type=float, default=0.3, help="Threshold for table detection")
@@ -103,33 +121,55 @@ if __name__ == "__main__":
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     print(f"Loaded model: {args.model_path}")
 
+    # Clear visualization directory
+    if os.path.exists(args.vis_dir):
+        for file in os.listdir(args.vis_dir):
+            file_path = os.path.join(args.vis_dir, file)
+            if os.path.isfile(file_path):
+                os.unlink(file_path)
+    else:
+        os.makedirs(args.vis_dir)
+
     # Predict
     point_preds, table_names, frame_indices = predict_point_labels(model, dataloader, device)
     
     # Save prediction results
     results_file = os.path.join(args.vis_dir, "prediction_results.txt")
-    os.makedirs(args.vis_dir, exist_ok=True)
     
     with open(results_file, 'w') as f:
-        f.write("Index\tTable Name\tFrame Index\tTable Point Ratio\tResult\n")
+        # 修改列标题以匹配实际写入的内容
+        f.write("Index\tFilename\tFrame\tTable Detection\tTable Point Ratio\n")
         
         # Visualize and analyze each point cloud
         print("\nGenerating prediction visualizations...")
-        for i, (points, preds, table_name, frame_idx) in enumerate(zip(dataset.pointclouds, point_preds, table_names, frame_indices)):
-            # Generate visualization filename prefix
-            file_prefix = f"{table_name}_frame{frame_idx}"
+        for i, (points, preds, filename, frame_idx) in enumerate(zip(dataset.pointclouds, point_preds, table_names, frame_indices)):
+            # 提取更干净的文件名用于显示
+            clean_filename = filename.replace('\\', '_').split('/')[-1] if isinstance(filename, str) else f"sample_{i}"
             
-            # Visualize and get table point ratio
-            table_ratio = visualize_prediction(points, preds, args.vis_dir, file_prefix, i)
+            # 计算桌面点的比例
+            table_ratio = np.mean(preds)
             
-            # Determine if table is present
-            has_table = "Yes" if table_ratio > args.threshold else "No"
+            # 计算桌面点的比例
+            table_ratio = np.mean(preds)
             
-            # Write results
-            f.write(f"{i}\t{table_name}\t{frame_idx}\t{table_ratio:.4f}\t{has_table}\n")
-    
-    # Output statistics
-    detected_tables = sum(1 for preds in point_preds if np.mean(preds) > args.threshold)
-    print(f"\nPrediction complete! Detected {detected_tables} tables in {len(point_preds)} samples ({detected_tables/len(point_preds)*100:.1f}%)")
-    print(f"Results saved to: {results_file}")
+            # 使用1%阈值判断是否有桌子
+            has_table = table_ratio > THRESHOLD  
+            
+            # 使用原始文件名作为可视化文件的前缀
+            file_prefix = f"{i:03d}_{clean_filename.split('.')[0]}"
+            
+            # 可视化
+            visualize_prediction(points, preds, args.vis_dir, file_prefix, i)
+            
+            # 写入结果，同时保存表面比例和二值结果
+            result_text = "Yes" if has_table else "No"
+            f.write(f"{i}\t{filename}\t{frame_idx}\t{result_text}\t{table_ratio:.4f}\n")
+
+    # 附加计算整体统计信息
+    num_tables = sum(1 for preds in point_preds if np.mean(preds) > THRESHOLD)
+    print(f"\nDetection Summary:")
+    print(f"- Total samples: {len(point_preds)}")
+    print(f"- Tables detected: {num_tables} ({num_tables/len(point_preds)*100:.1f}%)")
+    print(f"- No tables detected: {len(point_preds) - num_tables} ({(len(point_preds) - num_tables)/len(point_preds)*100:.1f}%)")
+    print(f"\nResults saved to: {results_file}")
     print(f"Visualization images saved to: {args.vis_dir}")

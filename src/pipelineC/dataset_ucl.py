@@ -5,8 +5,15 @@ from tqdm import tqdm
 import re
 
 # 使用与原始文件相同的相机参数
-fx, fy = 570.3422047415297, 570.3422047415297
-cx, cy = 320.0, 240.0
+# 原来 MIT 数据的相机内参
+# fx, fy = 570.3422047415297, 570.3422047415297
+# cx, cy = 320.0, 240.0
+
+# ✅ 替换为 RealSense 相机参数
+fx = 425.9412841796875
+fy = 425.49493408203125
+cx = 428.4195251464844
+cy = 243.318359375
 
 NUMPOINTS = 1024
 
@@ -68,101 +75,108 @@ def extract_frame_number(filename):
         return int(match.group(1))
     return 0
 
-def process_selected_images(base_dir, output_file):
-    """处理selected_images文件夹中的图像并转换为点云"""
-    # 读取selected_pairs.txt
-    pairs_file = os.path.join(base_dir, "selected_pairs.txt")
-    if not os.path.exists(pairs_file):
-        print(f"错误: {pairs_file} 不存在")
+
+def process_realsense_data(base_dir, output_file):
+    """处理 RealSense 文件夹中的图像并转换为点云，使用时间戳匹配"""
+    table_dir = os.path.join(base_dir, "table")
+    no_table_dir = os.path.join(base_dir, "no_table")
+    
+    # 检查目录是否存在
+    if not os.path.exists(table_dir) or not os.path.exists(no_table_dir):
+        print(f"Error: {table_dir} or {no_table_dir} does not exist")
         return
     
-    table2_pairs, table3_pairs = read_selected_pairs(pairs_file)
-    print(f"发现 {len(table2_pairs)} 对来自table2的图像和 {len(table3_pairs)} 对来自table3的图像")
+    all_pointclouds = []  # 所有点云数据
+    all_labels = []       # 对应的标签：1=table, 0=no_table
+    frame_indices = []    # 对应的帧索引
+    all_filenames = []    # 对应的文件名 - 新增
     
-    all_pointclouds = []
-    table_names = []  # 记录每个点云来自哪个桌子
-    frame_indices = []  # 记录每个点云的帧索引
+    # 处理包含桌子的图像
+    print("Processing images with tables...")
     
-    # 处理table2的图像
-    print("处理table2图像...")
-    for i, (rgb_path, depth_path) in enumerate(tqdm(table2_pairs)):
-        # 从文件路径中提取帧号
-        frame_idx = extract_frame_number(os.path.basename(rgb_path))
-        
-        # 修正路径，适应selected_images文件夹结构
-        depth_file = os.path.join(base_dir, "table2", depth_path)
-        rgb_file = os.path.join(base_dir, "table2", rgb_path)
-        
-        if not os.path.exists(depth_file) or not os.path.exists(rgb_file):
-            print(f"警告: 找不到文件 {depth_file} 或 {rgb_file}，跳过")
-            continue
+    # 处理含桌子的图像
+    depth_dir = os.path.join(table_dir, "depthTSDF")
+    
+    # 直接处理深度图，不需要匹配RGB图像
+    depth_files = sorted([f for f in os.listdir(depth_dir) if f.endswith('.png')])
+    
+    for depth_file in tqdm(depth_files):
+        # 从文件名提取时间戳作为帧索引
+        frame_idx = extract_frame_number(depth_file)
+        depth_path = os.path.join(depth_dir, depth_file)
         
         # 读取深度图
-        depth = cv2.imread(depth_file, cv2.IMREAD_UNCHANGED).astype(np.float32) / 1000.0  # 假设深度单位为毫米
+        depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED).astype(np.float32) / 1000.0  # 深度单位转换为米
         
         # 转换为点云
         raw_points = depth_to_pointcloud(depth)
         if len(raw_points) < 10:
-            print(f"警告: 帧 {frame_idx} 的有效点云点数太少")
+            print(f"Warning: Frame {frame_idx} has too few valid point cloud points")
             continue
         
         # 预处理点云
         points = preprocess_pointcloud(raw_points, num_points=NUMPOINTS)
         
         all_pointclouds.append(points)
-        table_names.append("table2")
+        all_labels.append(1)  # 1表示有桌子
         frame_indices.append(frame_idx)
+        all_filenames.append(f"table/{depth_file}")  # 新增：保存文件名
     
-    # 处理table3的图像
-    print("处理table3图像...")
-    for i, (rgb_path, depth_path) in enumerate(tqdm(table3_pairs)):
-        # 从文件路径中提取帧号
-        frame_idx = extract_frame_number(os.path.basename(rgb_path))
+    # 处理不包含桌子的图像
+    print("Processing images without tables...")
+    depth_dir = os.path.join(no_table_dir, "depthTSDF")
+    
+    # 同样直接处理深度图
+    if os.path.exists(depth_dir):
+        depth_files = sorted([f for f in os.listdir(depth_dir) if f.endswith('.png')])
         
-        # 修正路径，适应selected_images文件夹结构
-        depth_file = os.path.join(base_dir, "table3", depth_path)
-        rgb_file = os.path.join(base_dir, "table3", rgb_path)
-        
-        if not os.path.exists(depth_file) or not os.path.exists(rgb_file):
-            print(f"警告: 找不到文件 {depth_file} 或 {rgb_file}，跳过")
-            continue
-        
-        # 读取深度图
-        depth = cv2.imread(depth_file, cv2.IMREAD_UNCHANGED).astype(np.float32) / 1000.0  # 假设深度单位为毫米
-        
-        # 转换为点云
-        raw_points = depth_to_pointcloud(depth)
-        if len(raw_points) < 10:
-            print(f"警告: 帧 {frame_idx} 的有效点云点数太少")
-            continue
-        
-        # 预处理点云
-        points = preprocess_pointcloud(raw_points, num_points=NUMPOINTS)
-        
-        all_pointclouds.append(points)
-        table_names.append("table3")
-        frame_indices.append(frame_idx)
+        for depth_file in tqdm(depth_files):
+            # 从文件名提取时间戳作为帧索引
+            frame_idx = extract_frame_number(depth_file)
+            depth_path = os.path.join(depth_dir, depth_file)
+            
+            # 读取深度图
+            depth = cv2.imread(depth_path, cv2.IMREAD_UNCHANGED).astype(np.float32) / 1000.0
+            
+            # 转换为点云
+            raw_points = depth_to_pointcloud(depth)
+            if len(raw_points) < 10:
+                print(f"Warning: Frame {frame_idx} has too few valid point cloud points")
+                continue
+            
+            # 预处理点云
+            points = preprocess_pointcloud(raw_points, num_points=NUMPOINTS)
+            
+            all_pointclouds.append(points)
+            all_labels.append(0)  # 0表示无桌子
+            frame_indices.append(frame_idx)
+            all_filenames.append(f"no_table/{depth_file}")  # 新增：保存文件名
+    else:
+        print(f"Warning: No-table depth directory {depth_dir} not found")
     
     if not all_pointclouds:
-        print("错误: 没有成功处理任何点云数据")
+        print("Error: No point cloud data was successfully processed")
         return
     
     # 转换为NumPy数组
     all_pointclouds = np.stack(all_pointclouds)  # [N, 1024, 3]
+    all_labels = np.array(all_labels)
+    all_filenames = np.array(all_filenames)  # 新增：转换为NumPy数组
     
-    # 由于selected_images没有标签数据，我们只保存点云数据和元信息
+    # 保存点云数据和标签
     np.savez_compressed(output_file,
                       pointclouds=all_pointclouds,
-                      table_names=np.array(table_names, dtype=np.str_),
-                      frame_indices=np.array(frame_indices, dtype=np.int32))
+                      labels=all_labels,
+                      frame_indices=np.array(frame_indices, dtype=np.int32),
+                      filenames=all_filenames)  # 新增：保存文件名
     
-    print(f"\n数据集已保存为 {output_file}，共 {len(all_pointclouds)} 个样本")
-    print(f"包含 {sum(1 for name in table_names if name == 'table2')} 个table2样本")
-    print(f"包含 {sum(1 for name in table_names if name == 'table3')} 个table3样本")
+    print(f"\nDataset saved as {output_file} with {len(all_pointclouds)} samples")
+    print(f"Contains {np.sum(all_labels == 1)} table samples")
+    print(f"Contains {np.sum(all_labels == 0)} non-table samples")
 
 
 if __name__ == "__main__":
-    process_selected_images(
-        base_dir="./data/selected_images",
-        output_file="./datasets/selected_tables_pointclouds_C.npz"
+    process_realsense_data(
+        base_dir="./data/RealSense",
+        output_file="./datasets/realsense_pointclouds_C.npz"
     )
