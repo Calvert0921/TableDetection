@@ -5,6 +5,7 @@ from torchvision import transforms
 from dataloader_depthEst import get_dataloaders_depth
 import warnings
 from tqdm import tqdm  # Import tqdm for progress bars
+import os
 
 # Ignore warning from import model
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -106,7 +107,12 @@ def main():
             best_val_loss = avg_val_loss
             best_model_wts = midas.state_dict()  # Save the best model
             epochs_no_improve = 0
-            torch.save(midas.state_dict(), "../../weights/best_midas_finetuned.pth")  # Save the best model weights
+            
+            # Ensure the directory exists
+            weights_dir = "../../weights"
+            os.makedirs(weights_dir, exist_ok=True)
+
+            torch.save(midas.state_dict(), os.path.join(weights_dir, "best_midas_finetuned.pth"))
             print(f"Validation loss improved to {best_val_loss:.4f}. Model saved.")
         else:
             epochs_no_improve += 1
