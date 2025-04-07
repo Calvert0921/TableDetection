@@ -130,7 +130,7 @@ def main():
     # Load the Depth Estimator (MiDaS)
     # --------------------------
     midas = torch.hub.load("intel-isl/MiDaS", "MiDaS")
-    midas_weights_path = "best_midas_finetuned.pth"
+    midas_weights_path = "../../weights/best_midas_finetuned.pth"
     midas.load_state_dict(torch.load(midas_weights_path, map_location=device))
     midas.to(device)
     midas.eval()
@@ -139,7 +139,7 @@ def main():
     # Load the Table Classifier
     # --------------------------
     classifier = TableClassifier(num_classes=2)
-    classifier_weights_path = "table_classifier.pth"
+    classifier_weights_path = "../../weights/table_classifier.pth"
     classifier.load_state_dict(torch.load(classifier_weights_path, map_location=device))
     classifier.to(device)
     classifier.eval()

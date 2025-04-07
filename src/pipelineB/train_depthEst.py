@@ -42,7 +42,7 @@ def main():
     criterion = nn.L1Loss()
     optimizer = optim.Adam(midas.parameters(), lr=1e-4)
 
-    num_epochs = 30
+    num_epochs = 10
     best_val_loss = float('inf')
     epochs_no_improve = 0
     # patience = 5  # Number of epochs to wait without improvement before stopping
@@ -106,7 +106,7 @@ def main():
             best_val_loss = avg_val_loss
             best_model_wts = midas.state_dict()  # Save the best model
             epochs_no_improve = 0
-            torch.save(midas.state_dict(), "best_midas_finetuned.pth")  # Save the best model weights
+            torch.save(midas.state_dict(), "../../weights/best_midas_finetuned.pth")  # Save the best model weights
             print(f"Validation loss improved to {best_val_loss:.4f}. Model saved.")
         else:
             epochs_no_improve += 1

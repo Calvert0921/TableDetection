@@ -82,7 +82,7 @@ def main():
         "../../data/harvard_tea_2/hv_tea2_2",
     ]
     ucl_folders_base = ["../../data/RealSense/table", "../../data/RealSense/no_table"]
-    model_path = "best_midas_finetuned.pth"  # Path to your saved model
+    model_path = "../../weights/best_midas_finetuned.pth"  # Path to your saved model
 
     # Define transforms for the RGB image
     rgb_transform = transforms.Compose([ 

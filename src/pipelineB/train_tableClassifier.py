@@ -134,5 +134,5 @@ if __name__ == '__main__':
     trained_model = train_model(model, combined_dataloader, val_dataloader, criterion, optimizer, num_epochs, device)
 
     # Save the trained model.
-    torch.save(trained_model.state_dict(), "table_classifier.pth")
+    torch.save(trained_model.state_dict(), "../../weights/table_classifier.pth")
     print("Model training complete and saved as 'table_classifier.pth'.")
