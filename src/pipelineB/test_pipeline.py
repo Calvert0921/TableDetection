@@ -102,14 +102,14 @@ def main():
     # Define test folders.
     # You can mix folders with label files and folders without label files.
     big_data_dir = "../../data"
-    # test_folders = [
-    #     "harvard_c5/hv_c5_1", 
-    #     "harvard_c6/hv_c6_1", 
-    #     "harvard_c11/hv_c11_2", 
-    #     "harvard_tea_2/hv_tea2_2",
-    # ]
+    test_folders = [
+        "harvard_c5/hv_c5_1", 
+        "harvard_c6/hv_c6_1", 
+        "harvard_c11/hv_c11_2", 
+        "harvard_tea_2/hv_tea2_2",
+    ]
     
-    test_folders = ["RealSense/table", "RealSense/no_table"]
+    # test_folders = ["RealSense/table", "RealSense/no_table"]
     
     # Transform for RGB images for depth estimation (MiDaS expects 384x384)
     transform_midas = transforms.Compose([
