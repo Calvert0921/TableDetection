@@ -103,7 +103,7 @@ def main():
 
     all_mae, all_rmse, all_mse = [], [], []
 
-    for test_folder_base in mit_folders_base:
+    for test_folder_base in mit_folders_base: # Change to harvard_folders_base or ucl_folders_base if needed
         output_dir = os.path.join(test_folder_base, "depthPred")
         
         # Create output folder if it doesn't exist

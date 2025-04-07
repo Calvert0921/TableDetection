@@ -102,14 +102,14 @@ def main():
     # Define test folders.
     # You can mix folders with label files and folders without label files.
     big_data_dir = "../../data"
-    test_folders = [
+    harvard_test_folders = [
         "harvard_c5/hv_c5_1", 
         "harvard_c6/hv_c6_1", 
         "harvard_c11/hv_c11_2", 
         "harvard_tea_2/hv_tea2_2",
     ]
     
-    # test_folders = ["RealSense/table", "RealSense/no_table"]
+    ucl_test_folders = ["RealSense/table", "RealSense/no_table"]
     
     # Transform for RGB images for depth estimation (MiDaS expects 384x384)
     transform_midas = transforms.Compose([
@@ -123,7 +123,7 @@ def main():
     classifier_input_size = (224, 224)
     
     # Create test dataset and DataLoader.
-    test_dataset = TestPipelineDataset(big_data_dir, test_folders, transform=transform_midas)
+    test_dataset = TestPipelineDataset(big_data_dir, harvard_test_folders, transform=transform_midas) # Change to ucl_test_folders if needed
     test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
     
     # --------------------------
