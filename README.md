@@ -1,5 +1,35 @@
 # TableDetection
 
+## File tree can be represented as:
+```bash
+coursework2_groupO/
+├── data/
+│   ├── CW2-Dataset/
+│   ├── RealSense/
+│   └── spilit.py           # 
+├── src/
+│   ├── pipelineA/   
+│   │   ├── 
+│   │   └──      
+│   ├── pipelineB/ 
+│   │   ├── dataloader_depthEst.py          # Dataloader for depth estimator
+│   │   ├── dataloader_tableClassifier.py   # Dataloader for table classifier
+│   │   ├── test_depthEst.py                # Testing script for depth estimator, and also generate depth predictions for later training
+│   │   ├── test_pipeline.py                # Testing script for whole pipeline B
+│   │   ├── train_depthEst.py               # Training script for depth estimator
+│   │   ├── train_tableClassifier.py        # Training script for table classifier
+│   │   └── utils.py                        # Helper functions that can convert 16-bit depth to 8-bit
+│   ├── pipelineC/  
+│   │   ├── 
+│   │   └──        
+├── datasets/               # 
+├── weights/                # Model weights
+├── predictions/            # Predictions, plots
+├── read_labels.py          # Script to read the label
+├── requirements.txt        # Conda / pip environment specs
+└── README.md               # Setup / usage instructions
+```
+
 ## To install all the dependencies:
 ### 1. Run following command to create new environment
 ```bash
