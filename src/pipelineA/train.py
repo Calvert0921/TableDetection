@@ -58,8 +58,9 @@ def evaluate(model, val_loader, criterion, device):
     return avg_loss, accuracy
 
 if __name__ == "__main__":
-    npz_path = "/home/hank/TableDetection/datasets/pipelineA_dataset_mit_balanced.npz"
-    save_path = "./best_model_pipelineA.pth"
+    npz_path = "datasets/pipelineA_dataset_mit_balanced.npz"
+    save_path = "weights/best_model_pipelineA.pth"
+    os.makedirs(os.path.dirname(save_path), exist_ok=True)
     batch_size = 8
     epochs = 50
     lr = 0.001

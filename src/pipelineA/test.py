@@ -37,24 +37,25 @@ def evaluate_model(model, dataloader, device):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model_path', type=str, default="best_model_pipelineA.pth")
-    parser.add_argument('--test_npz', type=str, default="/home/hank/TableDetection/datasets/pipelineA_dataset_harvard_all.npz")
+    parser.add_argument('--model_path', type=str, default="weights/best_model_pipelineA.pth")
+    # parser.add_argument('--test_npz', type=str, default="datasets/pipelineA_dataset_harvard_all.npz")
+    parser.add_argument('--test_npz', type=str, default="datasets/pipelineA_RealSense_dataset.npz")
     parser.add_argument('--batch_size', type=int, default=8)
     args = parser.parse_args()
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print(f"Using device: {device}")
 
-    # 加载测试集
+    # load train dataset
     test_dataset = PointCloudDataset(args.test_npz)
     test_loader = DataLoader(test_dataset, batch_size=args.batch_size, shuffle=False)
 
-    # 加载模型
+    # load model
     model = DGCNN_cls().to(device)
     model.load_state_dict(torch.load(args.model_path, map_location=device))
     print(f"Loaded model from {args.model_path}")
 
-    # 评估
+    # evaluate
     y_true, y_pred = evaluate_model(model, test_loader, device)
 
     acc = (y_true == y_pred).mean()

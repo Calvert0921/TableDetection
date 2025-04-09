@@ -107,7 +107,11 @@ def build_dataset(base_dir, output_file):
     print(f"\n Dataset saved as {output_file}, total {len(all_labels)} samples")
 
 if __name__ == "__main__":
+    output_file = "datasets/pipelineA_dataset_harvard_all.npz"
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
+
     build_dataset(
-        base_dir="/home/hank/TableDetection/data",
-        output_file="/home/hank/TableDetection/datasets/pipelineA_dataset_harvard_all.npz"
+        base_dir="data/",
+        output_file=output_file
     )
+
