@@ -68,7 +68,7 @@ python3 test_Realsense_build.py
 ### 2. To train the depth estimator:
 ```bash
 cd src/pipelineA
-python3 train_depthEst.py
+python3 train.py
 ```
 
 ### 3. To test the modle:
