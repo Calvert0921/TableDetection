@@ -45,7 +45,47 @@ pip3 install -r requirements.txt
 
 ### 4. Prepare the data via the zip file
 
+
 ## Instruction for Pipeline A:
+
+### 1. Data processing (depth -> point Cloud)
+#### Train dataset (mit) build:
+```bash
+cd src/pipelineA
+python3 train_dataset_build.py
+```
+#### Test dataset (harvard) build:
+```bash
+cd src/pipelineA
+python3 test_dataset_build.py
+```
+#### Test RealSense dataset build:
+```bash
+cd src/pipelineA
+python3 test_Realsense_build.py
+```
+
+### 2. To train the depth estimator:
+```bash
+cd src/pipelineA
+python3 train_depthEst.py
+```
+
+### 3. To test the modle:
+```bash
+cd src/pipelineA
+python3 test.py
+```
+#### change the path: Select the path to the corresponding data set:
+If harvad dataset:
+```bash
+parser.add_argument('--test_npz', type=str, default="datasets/pipelineA_dataset_harvard_all.npz")
+```
+
+If RealSense dataset:
+```bash
+parser.add_argument('--test_npz', type=str, default="datasets/pipelineA_RealSense_dataset.npz")
+```
 
 ## Instruction for Pipeline B:
 
