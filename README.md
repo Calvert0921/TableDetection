@@ -6,11 +6,16 @@ coursework2_groupO/
 ├── data/
 │   ├── CW2-Dataset/
 │   ├── RealSense/
-│   └── spilit.py           # 
+│   └── spilit.py           
 ├── src/
 │   ├── pipelineA/   
-│   │   ├── 
-│   │   └──      
+│   │   ├── model.py                        # Model
+│   │   ├── train.py                        # Use DGCNN for classification training of point clouds
+│   │   ├── test.py                         # Load the trained model for testing and evaluation
+│   │   ├── test_dataset_build.py           # Processing Harvard test data (including labels)
+│   │   ├── test_Realsense_build.py         # Process RealSense data (no labels or manual labeling)    
+│   │   └── train_dataset_build.py           # Processing mit test data (including labels)
+│   │
 │   ├── pipelineB/ 
 │   │   ├── dataloader_depthEst.py          # Dataloader for depth estimator
 │   │   ├── dataloader_tableClassifier.py   # Dataloader for table classifier
