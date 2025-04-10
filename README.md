@@ -5,8 +5,7 @@
 coursework2_groupO/
 ├── data/
 │   ├── CW2-Dataset/
-│   ├── RealSense/
-│   └── spilit.py           
+│   └── RealSense/       
 ├── src/
 │   ├── pipelineA/   
 │   │   ├── model.py                        # Model
@@ -14,8 +13,7 @@ coursework2_groupO/
 │   │   ├── test.py                         # Load the trained model for testing and evaluation
 │   │   ├── test_dataset_build.py           # Processing Harvard test data (including labels)
 │   │   ├── test_Realsense_build.py         # Process RealSense data (no labels or manual labeling)    
-│   │   └── train_dataset_build.py           # Processing mit test data (including labels)
-│   │
+│   │   └── train_dataset_build.py          # Processing mit test data (including labels)
 │   ├── pipelineB/ 
 │   │   ├── dataloader_depthEst.py          # Dataloader for depth estimator
 │   │   ├── dataloader_tableClassifier.py   # Dataloader for table classifier
@@ -32,7 +30,7 @@ coursework2_groupO/
 │   │   ├── test_dataset_build.py           # Harvard test data processing
 │   │   ├── dataset_ucl.py                  # RealSense dataset processing script
 │   │   └── test_ucl.py                     # Unlabeled dataset prediction and visualization    
-├── datasets/               # 
+├── datasets/               # Place to store point clouds
 ├── weights/                # Model weights
 ├── predictions/            # Predictions, plots
 ├── read_labels.py          # Script to read the label
@@ -41,7 +39,7 @@ coursework2_groupO/
 ```
 
 ## To install all the dependencies:
-### 1. Run following command to create new environment
+### 1. Run following command to create new environment "object"
 ```bash
 conda create --name object python=3.10
 ```
@@ -75,13 +73,13 @@ cd src/pipelineA
 python3 test_Realsense_build.py
 ```
 
-### 2. To train the depth estimator:
+### 2. To train the model:
 ```bash
 cd src/pipelineA
 python3 train.py
 ```
 
-### 3. To test the modle:
+### 3. To test the model:
 ```bash
 cd src/pipelineA
 python3 test.py
