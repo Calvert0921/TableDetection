@@ -3,5 +3,6 @@ visualizations/
 
 # Ignore all .pyd files
 *.pyc
+*.pth
 
 predictions/
