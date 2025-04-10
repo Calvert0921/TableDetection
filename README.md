@@ -127,32 +127,32 @@ python3 test_pipeline.py
 ### 1. Data processing (convert depth maps to point clouds)
 #### Process MIT training dataset:
 ```bash
-python src/pipelineC/dataset_build.py
+python3 src/pipelineC/dataset_build.py
 ```
 
 #### Process Harvard test dataset:
 ```bash
-python src/pipelineC/test_dataset_build.py
+python3 src/pipelineC/test_dataset_build.py
 ```
 
 #### Process RealSense dataset:
 ```bash
-python src/pipelineC/dataset_ucl.py
+python3 src/pipelineC/dataset_ucl.py
 ```
 
 ### 2. Train point cloud segmentation model:
 ```bash
-python src/pipelineC/train.py
+python3 src/pipelineC/train.py
 ```
 
 ### 3. Test and evaluate model:
 ```bash
-python src/pipelineC/test.py
+python3 src/pipelineC/test.py
 ```
 
 ### 4. Predict on unlabeled data:
 ```bash
-python src/pipelineC/test_ucl.py
+python3 src/pipelineC/test_ucl.py
 ```
 
 ### **The prediction results will be saved in the specified visualization directory, including point cloud segmentation visualizations and a prediction summary file.**
